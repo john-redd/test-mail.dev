@@ -35,9 +35,9 @@ module.exports = {
   },
   onData: (stream, session, cb) => {
     let parser = new MailParser()
-    let mailobj = {
+    let mailObj = {
       attachments: [],
-      text: {}
+      body: {}
     }
 
     parser.on('headers', (headers) => {
@@ -48,16 +48,16 @@ module.exports = {
         headerObj[k] = v
       }
 
-      mailobj.headers = headerObj
+      mailObj.headers = headerObj
     })
 
     parser.on('data', (data) => {
       if (data.type === 'attachment') {
-        mailobj.attachments.push(data)
+        mailObj.attachments.push(data)
         data.content.on('readable', () => data.content.read())
         data.content.on('end', () => data.release())
       } else {
-        mailobj.text = data
+        mailObj.body = data
       }
     })
 
@@ -65,7 +65,7 @@ module.exports = {
       recipients.forEach((user) => {
         console.log(
           JSON.stringify(
-            mailobj,
+            mailObj,
             (k, v) => (k === 'content' || k === 'release' ? undefined : v),
             3
           )
@@ -74,7 +74,7 @@ module.exports = {
         db.rpush(
           user,
           JSON.stringify(
-            mailobj,
+            mailObj,
             (k, v) => (k === 'content' || k === 'release' ? undefined : v),
             3
           ),
