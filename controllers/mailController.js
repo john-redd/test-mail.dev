@@ -6,24 +6,23 @@ module.exports = {
     if (!db) {
       return res.status(500).end()
     }
-  
+
     let { user } = req.params
-  
+
     user = withEmailHost(user)
-  
+
     db.lrange(user, -10, -1, function (err, replies) {
       if (err) {
         console.log(new Date().toISOString() + ': ERROR', err)
         res.status(500).end()
       } else {
-        const arr = []
-        replies.forEach(function (r) {
-          try {
-            arr.unshift(JSON.parse(r))
-          } catch (e) {}
-        })
+        const parsedEmails = replies
+          .map((r) => {
+            return JSON.parse(r)
+          })
+          .sort((a, b) => new Date(b.headers.date) - new Date(a.headers.date))
         res.set('Content-Type', 'application/json')
-        res.send(JSON.stringify(arr, undefined, 2))
+        res.status(200).send(parsedEmails)
       }
     })
   },
@@ -31,13 +30,16 @@ module.exports = {
     if (!db) {
       return res.status(500).end()
     }
-  
+
     let { user } = req.params
-  
+
     user = withEmailHost(user)
-  
+
     db.del(user, function (err) {
-      res.status(err ? 500 : 200).end()
+      if (err) {
+        return res.sendStatus(500)
+      }
+      res.sendStatus(200)
     })
   }
 }

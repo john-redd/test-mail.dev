@@ -6,6 +6,7 @@ const { WEB_SERVER_PORT } = process.env
 const stsMiddleware = require('./middleware/stsMiddleware')
 const mailCtrl = require('./controllers/mailController')
 
+app.use(express.json())
 app.use(stsMiddleware)
 
 app.get('/api/mail/:user', mailCtrl.getMailByUser)

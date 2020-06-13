@@ -6,10 +6,6 @@ const socketInfo = require('../utils/socketInfo')
 
 const db = require('../utils/db')
 
-let recipients = []
-let rcptTo = 0
-let rejected = false
-
 module.exports = {
   onConnect: (session, cb) => {
     log(`${socketInfo(session)}: Handling SMTP Request`)
@@ -24,16 +20,14 @@ module.exports = {
 
     const isPermitted = config.rcptToDomainWhitelist.includes(domain[1])
 
-    // Do number of recipients check
-
     if (isPermitted){
-      recipients.push(address.address)
       cb()
       return
     }
     cb(new Error('Unpermitted Domain'))
   },
   onData: (stream, session, cb) => {
+    const { rcptTo: recipients } = session.envelope
     let parser = new MailParser()
     let mailObj = {
       attachments: [],
@@ -62,7 +56,8 @@ module.exports = {
     })
 
     parser.on('end', (data) => {
-      recipients.forEach((user) => {
+      console.log(recipients)
+      recipients.forEach(({ address }) => {
         console.log(
           JSON.stringify(
             mailObj,
@@ -72,7 +67,7 @@ module.exports = {
         )
 
         db.rpush(
-          user,
+          address,
           JSON.stringify(
             mailObj,
             (k, v) => (k === 'content' || k === 'release' ? undefined : v),
@@ -83,17 +78,17 @@ module.exports = {
               return logError(err)
             }
 
-            if (config.expireAfter) {
-              db.expire(user, config.expireAfter)
+            if (config.mailExpiry) {
+              db.expire(address, config.mailExpiry)
             }
 
-            db.llen(user, function (err, replies) {
+            db.llen(address, function (err, inbox) {
               if (err) {
                 return logError(err)
               }
 
-              if (replies > 10) {
-                db.ltrim(user, -10, -1, function (err) {
+              if (inbox > 10) {
+                db.ltrim(address, -10, -1, function (err) {
                   if (err) {
                     return logError(err)
                   }
