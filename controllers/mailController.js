@@ -41,5 +41,17 @@ module.exports = {
       }
       res.sendStatus(200)
     })
-  }
+  },
+  deleteAllMail: (req, res) => {
+    if (!db) {
+      return res.status(500).end()
+    }
+
+    db.flushall(function (err) {
+      if (err) {
+        return res.sendStatus(500)
+      }
+      res.sendStatus(200)
+    })
+  },
 }
