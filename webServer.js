@@ -13,6 +13,8 @@ app.get('/api/mail/:user', mailCtrl.getMailByUser)
 
 app.delete('/api/mail/:user', mailCtrl.deleteMailByUser)
 
+app.delete('/api/mail', mailCtrl.deleteAllMail)
+
 app.listen(WEB_SERVER_PORT, () =>
   console.log(`Web server running on port ${WEB_SERVER_PORT}`)
 )
